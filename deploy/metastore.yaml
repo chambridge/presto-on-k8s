@@ -7,8 +7,8 @@ metadata:
     openshift.io/long-description: "This template defines resources needed to deploy and run the Hive metastore."
     openshift.io/provider-display-name: "Red Hat, Inc."
 labels:
-  app: koku
-  template: koku-metastore
+  app: hive-metastore
+  template: hive-metastore
 objects:
 - apiVersion: v1
   kind: ConfigMap

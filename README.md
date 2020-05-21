@@ -13,39 +13,38 @@ make setup-pull-secret
 
 ```
 make setup-metastore-secret key=<aws access key> secret=<aws secret>
-make deploy-metastore username=<db user> password=<db password> s3path=<s3bucket>
+make deploy-metastore s3bucket=<s3bucket>
 ```
 
-3. Deploy Presto services (coordinator, workers, and cli)
+3. Deploy Presto services (coordinator, workers)
+
+```
+make deploy-presto
+```
 
 4. Deploy Redash.
+
+```
+make deploy-redash
+```
 
 Assumptions: Working OpenShift 4 deployment and S3 object store (AWS).
 
 Things you may need to modify:
 * Memory settings and worker counts.
 
-# Hive Metastore Service
+# What's next
 
-Dockerfile for Metastore
- * Uses [Hive Metastore Standalone service](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+3.0+Administration).
+You can log into presto with the CLI:
 
-Yaml for PostgresSQL
- * Simple and not optimized.
+```
+oc exec -it presto-coordinator-0 presto-cli -- --server presto:8080 --catalog hive  --schema default
+```
 
-Yaml for init-schemas
- * One-time K8s job to initiate the Postgres tables.
+Now that your connection works you can generate some data in s3 with the following command:
 
-Yaml for Metastore
+```
+./gendata.sh <s3bucket-with-path>
+```
 
-# Presto Coordinator/Workers/CLI
-
-Dockerfile for PrestoSql.
-
-Script: autoconfig_and_launch.sh
- * Generate final presto config files at pod startup time.
-
-Yaml for Presto Coordinator/Workers
-
-Dockerfile for Presto CLI
- * Simple image to make interactive use of Presto easier.
+From here you can port-foward or create a route for redash and and start querying and building charts as discussed in the blog above.
