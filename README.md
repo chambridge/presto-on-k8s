@@ -9,23 +9,16 @@ oc project <project>
 make setup-pull-secret
 ```
 
-2. Deploy PostgresSQL for use with metastore
-
-```
-make setup-db-secret username=<db user> password=<db password>
-make deploy-db namespace=<namespace>
-```
-
-3. Deploy Hive Metastore
+2. Deploy Hive Metastore (using Embedded Derby)
 
 ```
 make setup-metastore-secret key=<aws access key> secret=<aws secret>
 make deploy-metastore username=<db user> password=<db password> s3path=<s3bucket>
 ```
 
-4. Deploy Presto services (coordinator, workers, and cli)
+3. Deploy Presto services (coordinator, workers, and cli)
 
-5. Deploy Redash.
+4. Deploy Redash.
 
 Assumptions: Working OpenShift 4 deployment and S3 object store (AWS).
 

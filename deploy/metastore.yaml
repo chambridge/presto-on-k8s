@@ -55,19 +55,11 @@ objects:
         </property>
         <property>
           <name>javax.jdo.option.ConnectionURL</name>
-          <value>jdbc:postgresql://${NAME}-db/metastore</value>
+          <value>jdbc:derby:;databaseName=/var/lib/hive/data;create=true</value>
         </property>
         <property>
           <name>javax.jdo.option.ConnectionDriverName</name>
-          <value>org.postgresql.Driver</value>
-        </property>
-        <property>
-          <name>javax.jdo.option.ConnectionUserName</name>
-          <value>${DB_USER}</value>
-        </property>
-        <property>
-          <name>javax.jdo.option.ConnectionPassword</name>
-          <value>${DB_PASSWORD}</value>
+          <value>org.apache.derby.jdbc.EmbeddedDriver</value>
         </property>
         <property>
           <name>datanucleus.schema.autoCreateAll</name>
@@ -216,27 +208,6 @@ objects:
   metadata:
     name: hive-scripts
   data:
-    hive-init-schema.sh: |
-      #!/bin/bash
-
-      mkdir -p $HIVE_HOME/conf/
-
-      ln -s -f /hive-config/hive-site.xml $HIVE_HOME/conf/hive-site.xml
-      
-      /opt/hive/bin/schematool --verbose -initSchema -dbType postgres -userName ${DB_USER}
-
-    copy-hadoop-config.sh: |
-      #!/bin/bash
-      set -ex
-      cp -v -L -r -f /hadoop-starting-config/* /hadoop-config/
-      cd /hadoop-config/
-      faq '.configuration.property+=[{name: ("fs.azure.account.key." + env.AZURE_STORAGE_ACCOUNT_NAME + ".blob.core.windows.net"), value: env.AZURE_SECRET_ACCESS_KEY }]' core-site.xml > core-site.xml.temp
-      mv -f core-site.xml.temp core-site.xml
-      if [ -a /gcs-json/gcs-service-account.json ]; then
-        faq '.configuration.property+=[{name: "fs.gs.auth.service.account.json.keyfile" , value: "/gcs-json/gcs-service-account.json" }]' core-site.xml > core-site.xml.temp
-        mv -f core-site.xml.temp core-site.xml
-      fi
-
     entrypoint.sh: |
       #!/bin/bash
       function importCert() {
@@ -375,41 +346,6 @@ objects:
           app: hive
           hive: metastore
       spec:
-        initContainers:
-        - name: copy-starter-hive
-          image: >-
-              registry.redhat.io/openshift4/ose-metering-hive@sha256:32dc9b6924109b628c083feb8babf65efb1984c1377371fdfaa7c4a0e6578c45
-          imagePullPolicy: Always
-          command: ["/hive-scripts/copy-hadoop-config.sh"]
-          volumeMounts:
-          - name: hive-scripts
-            mountPath: /hive-scripts
-          - name: hadoop-config
-            mountPath: /hadoop-config
-          - name: hadoop-starting-config
-            mountPath: /hadoop-starting-config
-        - name: hive-init-schema
-          image: >-
-              registry.redhat.io/openshift4/ose-metering-hive@sha256:32dc9b6924109b628c083feb8babf65efb1984c1377371fdfaa7c4a0e6578c45
-          imagePullPolicy: Always
-          command: ["/hive-scripts/hive-init-schema.sh"]
-          volumeMounts:
-          - name: hive-config
-            mountPath: /hive-config
-          - name: hive-scripts
-            mountPath: /hive-scripts
-          - name: hadoop-config
-            mountPath: /hadoop-config
-          - name: hadoop-starting-config
-            mountPath: /hadoop-starting-config
-        volumes:
-        - name: hive-scripts
-          configMap:
-            name: hive-scripts
-            defaultMode: 0775
-        - name: hive-config
-          configMap:
-            name: hive-config
         containers:
         - name: metastore
           command: ["/hive-scripts/entrypoint.sh"]
@@ -502,11 +438,5 @@ parameters:
 - name: NAME
   required: true
   value: koku
-- name: DB_USER
-  required: true
-  value: postgres
-- name: DB_PASSWORD
-  required: true
-  value: postgres
 - name: S3_PATH
   required: true
