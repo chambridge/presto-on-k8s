@@ -1,0 +1,258 @@
+#
+# This template defines objects used to deploy the Koku database.
+#
+
+apiVersion: v1
+kind: Template
+metadata:
+  name: koku-database-template
+  annotations:
+    openshift.io/display-name: "Koku"
+    description: "Cloud Cost Management powered by Django+PostgreSQL"
+    tags: "quickstart,python,django,postgresql"
+    iconClass: "icon-python"
+    openshift.io/long-description: "This template defines resources needed to deploy and run the Koku database."
+    openshift.io/provider-display-name: "Red Hat, Inc."
+    openshift.io/documentation-url: "https://koku.readthedocs.io/en/latest/"
+labels:
+  app: koku
+  template: koku-database
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the database
+      template.alpha.openshift.io/wait-for-ready: "true"
+    name: ${NAME}-db
+  spec:
+    replicas: ${{REPLICAS}}
+    selector:
+        name: ${NAME}-db
+    strategy:
+      type: Recreate
+      recreateParams:
+        post:
+          failurePolicy: retry
+          execNewPod:
+            containerName: ${NAME}-db
+            command:
+            - /bin/sh
+            - -c
+            - >-
+              sleep 10 && printenv && scl enable rh-postgresql10
+              "/opt/rh/rh-postgresql10/root/usr/bin/psql $POSTGRESQL_DATABASE -p
+              $POSTGRES_SQL_SERVICE_PORT -h $POSTGRES_SQL_SERVICE_HOST -U
+              $POSTGRESQL_USER -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA
+              public; CREATE EXTENSION IF NOT EXISTS pg_stat_statements;'"
+            env:
+              - name: POSTGRESQL_USER
+                value: ${POSTGRES_SQL_ADMIN}
+              - name: PGPASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: db.admin.password
+                    name: koku-db
+              - name: POSTGRESQL_DATABASE
+                value: ${DATABASE_NAME}
+              - name: POSTGRES_SQL_SERVICE_HOST
+                valueFrom:
+                  secretKeyRef:
+                    key: db.host
+                    name: koku-db
+                    optional: false
+              - name: POSTGRES_SQL_SERVICE_PORT
+                value: ${POSTGRES_SQL_SERVICE_PORT}
+              - name: IMAGE_TAG
+                value: ${IMAGE_TAG}
+              - name: IMAGE_NAMESPACE
+                value: ${IMAGE_NAMESPACE}
+    template:
+      metadata:
+        name: ${NAME}-db
+        labels:
+          name: ${NAME}-db
+      spec:
+        containers:
+        - env:
+          - name: IMAGE_NAMESPACE
+            value: ${IMAGE_NAMESPACE}
+          - name: IMAGE_TAG
+            value: ${IMAGE_TAG}
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: db.user
+                name: ${NAME}-db
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: db.password
+                name: ${NAME}-db
+          - name: POSTGRESQL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: koku-secret
+          - name: POSTGRESQL_DATABASE
+            value: ${DATABASE_NAME}
+          image: rhel7-postgresql-10:latest
+          command:
+            - run-postgresql
+            - -c
+            - shared_preload_libraries=pg_stat_statements
+            - -c
+            - autovacuum_max_workers=8
+            - -c
+            - autovacuum_vacuum_cost_limit=4800
+            - -c
+            - autovacuum_vacuum_cost_delay=10
+            - -c
+            - idle_in_transaction_session_timeout=30000
+            - -c
+            - pg_stat_statements.max=2000
+            - -c
+            - pg_stat_statements.save=off
+            - -c
+            - pg_stat_statements.track_utility=off
+            - -c
+            - track_activity_query_size=2048
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+              - /usr/libexec/check-container
+              - --live
+            failureThreshold: 3
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          name: ${NAME}-db
+          ports:
+          - containerPort: 5432
+            protocol: TCP
+            name: ${NAME}-db
+          readinessProbe:
+            exec:
+              command:
+              - /usr/libexec/check-container
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            requests:
+              memory: ${MEMORY_REQUEST}
+              cpu: ${CPU_REQUEST}
+            limits:
+              memory: ${MEMORY_LIMIT}
+              cpu: ${CPU_LIMIT}
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: ${NAME}-db-data
+        volumes:
+        - name: ${NAME}-db-data
+          persistentVolumeClaim:
+            claimName: ${NAME}-db
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${NAME}-db
+        from:
+          kind: ImageStreamTag
+          name: postgresql-10-rhel7:latest
+          namespace: ${NAMESPACE}
+      type: ImageChange
+    - type: ConfigChange
+
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${NAME}-db
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${VOLUME_CAPACITY}
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Exposes the database service
+    name: ${NAME}-db
+  spec:
+    ports:
+    - name: ${NAME}-db
+      port: 5432
+      protocol: TCP
+      targetPort: ${NAME}-db
+    selector:
+      name: ${NAME}-db
+
+parameters:
+- description: The name assigned to all frontend objects defined in this template.
+  displayName: Name
+  name: NAME
+  required: true
+  value: koku
+- description: Initial amount of memory the Django container will request.
+  displayName: Memory Request
+  name: MEMORY_REQUEST
+  required: true
+  value: 2Gi
+- description: Maximum amount of memory the Django container can use.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 2Gi
+- description: Initial amount of cpu the Django container will request.
+  displayName: CPU Request
+  name: CPU_REQUEST
+  required: true
+  value: 200m
+- description: Maximum amount of cpu the Django container can use.
+  displayName: CPU Limit
+  name: CPU_LIMIT
+  required: true
+  value: 300m
+- displayName: Database Name
+  name: DATABASE_NAME
+  required: true
+  value: metastore
+- description: Volume space available for data, e.g. 512Mi, 2Gi
+  displayName: Volume Capacity
+  name: VOLUME_CAPACITY
+  required: true
+  value: 1Gi
+- description: The OpenShift Namespace where the application resides.
+  displayName: Namespace
+  name: NAMESPACE
+  required: true
+  value: koku
+- description: Image tag
+  displayName: Image tag
+  name: IMAGE_TAG
+  value: latest
+  required: true
+- description: Image namespace
+  displayName: Image namespace
+  name: IMAGE_NAMESPACE
+  value: koku
+  required: true
+- description: replica count
+  name: REPLICAS
+  required: true
+  value: "1"
+- description: Database port
+  displayName: Database port
+  name: POSTGRES_SQL_SERVICE_PORT
+  value: "5432"
+- description: Database superuser
+  displayName: Database superuser
+  name: POSTGRES_SQL_ADMIN
+  value: "postgres"

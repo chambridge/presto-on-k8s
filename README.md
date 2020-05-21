@@ -1,25 +1,35 @@
-# presto-on-k8s
-Setup for running Presto with Hive Metastore on Kubernetes as introduced in [this blog post](https://medium.com/@joshua_robinson/presto-powered-s3-data-warehouse-on-kubernetes-aea89d2f40e8).
-
-See [previous blog post](https://medium.com/@joshua_robinson/presto-on-flashblade-s3-486ecb449574)
-for more information about running Presto on FlashBlade.
+# presto-on-ocp4
+Setup for running Presto with Hive Metastore on OpenShift 4 as extended from [this blog post](https://medium.com/@joshua_robinson/presto-powered-s3-data-warehouse-on-kubernetes-aea89d2f40e8).
 
 # How to Use
 
-1. Build Docker images for Hive Metastore and Presto
+1. Setup pull secret in your project
+```
+oc project <project>
+make setup-pull-secret
+```
 
-2. Deploy Hive Metastore: MariaDB (pvs and deployment), init-schemas, Metastore
+2. Deploy PostgresSQL for use with metastore
 
-3. Deploy Presto services (coordinator, workers, and cli)
+```
+make setup-db-secret username=<db user> password=<db password>
+make deploy-db namespace=<namespace>
+```
 
-4. Deploy Redash.
+3. Deploy Hive Metastore
 
-Assumptions: working Kubernetes deployment and S3 object store (e.g., FlashBlade).
+```
+make setup-metastore-secret key=<aws access key> secret=<aws secret>
+make deploy-metastore username=<db user> password=<db password> s3path=<s3bucket>
+```
+
+4. Deploy Presto services (coordinator, workers, and cli)
+
+5. Deploy Redash.
+
+Assumptions: Working OpenShift 4 deployment and S3 object store (AWS).
 
 Things you may need to modify:
-* Docker repository name ($REPONAME) in build_image scripts and yaml files.
-* DataVIP and access keys for FlashBlade (fs.s3a.endpoint and hive.s3.endpoint)
-* StorageClass for the MariaDB volume.
 * Memory settings and worker counts.
 
 # Hive Metastore Service
@@ -27,11 +37,11 @@ Things you may need to modify:
 Dockerfile for Metastore
  * Uses [Hive Metastore Standalone service](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+3.0+Administration).
 
-Yaml for MariaDB
+Yaml for PostgresSQL
  * Simple and not optimized.
 
 Yaml for init-schemas
- * One-time K8s job to initiate the MariaDB tables.
+ * One-time K8s job to initiate the Postgres tables.
 
 Yaml for Metastore
 
