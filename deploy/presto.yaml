@@ -433,7 +433,7 @@ objects:
                 mountPath: /hadoop-starting-config
             terminationMessagePolicy: File
             image: >-
-              registry.redhat.io/openshift4/ose-metering-presto@sha256:47c66447354107068438bb534568b271c01262c625c47c603f24f683e1274241
+              registry.redhat.io/openshift4/ose-metering-presto:v4.4
         schedulerName: default-scheduler
         affinity:
           podAntiAffinity:
@@ -526,7 +526,7 @@ objects:
                 mountPath: /hadoop-starting-config
             terminationMessagePolicy: File
             image: >-
-              registry.redhat.io/openshift4/ose-metering-presto@sha256:47c66447354107068438bb534568b271c01262c625c47c603f24f683e1274241
+              registry.redhat.io/openshift4/ose-metering-presto:v4.4
             args:
               - /opt/presto/presto-server/bin/launcher
               - run
@@ -655,7 +655,7 @@ objects:
                 mountPath: /hadoop-starting-config
             terminationMessagePolicy: File
             image: >-
-              registry.redhat.io/openshift4/ose-metering-presto@sha256:47c66447354107068438bb534568b271c01262c625c47c603f24f683e1274241
+              registry.redhat.io/openshift4/ose-metering-presto:v4.4
         schedulerName: default-scheduler
         affinity:
           podAntiAffinity:
@@ -748,7 +748,7 @@ objects:
                 mountPath: /hadoop-starting-config
             terminationMessagePolicy: File
             image: >-
-              registry.redhat.io/openshift4/ose-metering-presto@sha256:47c66447354107068438bb534568b271c01262c625c47c603f24f683e1274241
+              registry.redhat.io/openshift4/ose-metering-presto:v4.4
             args:
               - /opt/presto/presto-server/bin/launcher
               - run

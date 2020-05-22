@@ -351,7 +351,7 @@ objects:
           command: ["/hive-scripts/entrypoint.sh"]
           args: ["/opt/hive/bin/hive", "--service", "metastore"]
           image: >-
-              registry.redhat.io/openshift4/ose-metering-hive@sha256:32dc9b6924109b628c083feb8babf65efb1984c1377371fdfaa7c4a0e6578c45
+              registry.redhat.io/openshift4/ose-metering-hive:v4.4
           imagePullPolicy: Always
           ports:
           - name: meta
