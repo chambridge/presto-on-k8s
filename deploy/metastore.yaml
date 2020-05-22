@@ -75,7 +75,7 @@ objects:
         </property>
         <property>
           <name>hive.metastore.warehouse.dir</name>
-          <value>s3a://${S3_PATH}</value>
+          <value>s3a://${S3_PATH}/</value>
         </property>
       </configuration>
 
@@ -398,6 +398,8 @@ objects:
             mountPath: /opt/hadoop/logs
           - name: hadoop-config
             mountPath: /hadoop-config
+          - name: hadoop-starting-config
+            mountPath: /hadoop-starting-config
           resources:
               limits:
                 cpu: '1'
@@ -435,8 +437,5 @@ objects:
             defaultMode: 420
 
 parameters:
-- name: NAME
-  required: true
-  value: koku
 - name: S3_PATH
   required: true

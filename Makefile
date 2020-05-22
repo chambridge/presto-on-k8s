@@ -17,15 +17,16 @@ help:
 	@echo "      s3bucket=<s3 path>                     @param - Optional. The AWS S3 bucket"
 	@echo "  deploy-presto                     deploy the presto-coordinator and worker"
 	@echo "  deploy-redash                     deploy the redash UI"
+	@echo "  init-redash                       initialize the redash UI"
 
 
 setup-pull-secret:
-    oc get secret pull-secret --namespace=openshift-config --export -o yaml | oc apply -f -
+	oc get secret pull-secret --namespace=openshift-config --export -o yaml | oc apply -f -
 
 setup-metastore-secret:
 	@cp deploy/s3-secret.yaml testing/s3-secret.yaml
-	@sed -i "" 's/cG9zdGdyZXM=/$(shell printf "$(shell echo $(or $(username),postgres))" | base64)/g' testing/s3-secret.yaml
-	@sed -i "" 's/cG9zdGdyZXM=/$(shell printf "$(shell echo $(or $(password),postgres))" | base64)/g' testing/s3-secret.yaml
+	@sed -i "" 's/a29rdS1kYg==/$(shell printf "$(shell echo $(or $(key),aws_key))" | base64)/g' testing/s3-secret.yaml
+	@sed -i "" 's/cG9zdGdyZXM=/$(shell printf "$(shell echo $(or $(secret),aws_secret))" | base64)/g' testing/s3-secret.yaml
 	oc apply -f testing/s3-secret.yaml
 
 deploy-metastore:
@@ -42,3 +43,7 @@ deploy-presto:
 deploy-redash:
 	@cp deploy/redash.yaml testing/redash.yaml
 	oc process -f testing/redash.yaml | oc create -f -
+
+init-redash:
+	oc exec -it $$(oc get pods -o jsonpath='{.items[?(.status.phase=="Running")].metadata.name}' -l app=redash) -c server /app/bin/docker-entrypoint create_db
+

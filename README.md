@@ -28,6 +28,11 @@ make deploy-presto
 make deploy-redash
 ```
 
+5. Initialize Redash.
+```
+make init-redash
+```
+
 Assumptions: Working OpenShift 4 deployment and S3 object store (AWS).
 
 Things you may need to modify:
