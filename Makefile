@@ -37,9 +37,9 @@ setup-metastore-secret:
 deploy-metastore:
 	@cp deploy/metastore.yaml testing/metastore.yaml
 	@mkdir -p testing/metastore/hadoop-config/
-	@cp deploy/metastore/hadoop-config/core-site.xml testing/metastore/hadoop-config/core-site.xml
-	@sed -i "" 's/s3path/$(shell echo $(or $(s3bucket),metastore))/g' testing/metastore/hadoop-config/core-site.xml
-	oc create secret generic hadoop-config --from-file=testing/metastore/hadoop-config/core-site.xml --type=Opaque
+	@cp deploy/hadoop/hadoop-config/core-site.xml testing/hadoop/hadoop-config/core-site.xml
+	@sed -i "" 's/s3path/$(shell echo $(or $(s3bucket),metastore))/g' testing/hadoop/hadoop-config/core-site.xml
+	oc create secret generic hadoop-config --from-file=testing/hadoop/hadoop-config/core-site.xml --type=Opaque
 	oc process -f testing/metastore.yaml -p S3_PATH="$(shell echo $(or $(s3bucket),metastore))" | oc create -f -
 
 deploy-presto:
