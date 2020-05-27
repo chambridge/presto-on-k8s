@@ -8,6 +8,12 @@ Deploying Presto on OpenShift 4 assumes you have a working OpenShift 4 cluster.
 
 Both the OpenShift 4 deployment and Docker Compose setup assumes you have access to the S3 object store (AWS).
 
+0. Clone the repo
+```
+git clone https://github.com/chambridge/presto-on-ocp4.git
+```
+
+
 # OpenShift 4 Deployment
 
 1. Setup pull secret in your project
@@ -45,16 +51,16 @@ Things you may need to modify:
 
 ## What's next
 
-You can log into presto with the CLI:
+You can execute SQL presto-cli:
 
 ```
-oc exec -it presto-coordinator-0 presto-cli -- --server presto:8080 --catalog hive  --schema default
+make oc-run-presto-cli sql=<sql>
 ```
 
 Now that your connection works you can generate some data in s3 with the following command:
 
 ```
-./gendata.sh <s3bucket-with-path>
+scripts/gendata.sh <s3bucket-with-path>
 ```
 
 From here you can port-foward or create a route for redash and and start querying and building charts as discussed in the blog above.
@@ -87,4 +93,33 @@ make docker-logs
 6. Shutdown the containers
 ```
 make docker-down
+```
+
+## What's next
+
+You can execute SQL presto-cli:
+```
+make docker-run-presto-cli sql=<sql>
+```
+
+# Using python to connect an interact
+
+1.Setup requirements
+```
+pipenv install
+```
+
+2. Copy the example.env file to .env and update your AWS credential values
+```
+cp example.env .env
+```
+
+3. Port-forward presto (OCP only)
+```
+make oc-port-forward-presto
+```
+
+4. Run script
+```
+python scripts/presto_connect.py
 ```
