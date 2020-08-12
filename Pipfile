@@ -5,8 +5,12 @@ name = "pypi"
 
 [packages]
 presto-client = "*"
+pandas = "*"
+pyarrow = "*"
 
 [dev-packages]
+parquet-tools = "*"
+dataclasses = "*"
 
 [requires]
 python_version = "3.6"

@@ -104,3 +104,5 @@ docker-presto-init-s3:
 docker-run-presto-cli:
 	docker exec -it presto presto-cli --catalog hive --execute "$(sql)"
 
+docker-run-presto-cli-pg:
+	docker exec -it presto presto-cli --catalog postgresql --execute "$(sql)"
